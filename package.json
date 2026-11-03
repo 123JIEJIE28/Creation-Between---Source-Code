@@ -1,0 +1,14 @@
+{
+  "name": "workspace-creative-library",
+  "version": "1.0.0",
+  "private": true,
+  "description": "个人 AI 创作资料库",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node scripts/verify-download.mjs"
+  }
+}

@@ -1,0 +1,23 @@
+# Personal records and uploaded images
+/data/
+/uploads/
+
+# Dependencies and local configuration
+/node_modules/
+.env
+.env.*
+.dev.vars*
+*.pem
+*.key
+
+# Local tools, previews, tests, and generated output
+/.openai/
+/.codex/
+/.agents/
+/outputs/
+/work/
+/.test-data/
+/coverage/
+*.log
+*.zip
+.DS_Store
