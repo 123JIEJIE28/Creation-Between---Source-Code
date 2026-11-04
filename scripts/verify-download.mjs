@@ -11,13 +11,15 @@ import {tmpdir} from 'node:os';
 // user's records, uploads, or preview process.
 const root=fileURLToPath(new URL('../',import.meta.url));
 const temporary=await mkdtemp(path.join(tmpdir(),'creative-library-download-'));
+const cleanEnvironment={...process.env};
+for(const key of ['NODE_ENV','OWNER_USERNAME','OWNER_PASSWORD_HASH','OWNER_PASSWORD','PUBLIC_ORIGIN','RENDER_EXTERNAL_URL'])delete cleanEnvironment[key];
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 let server;
 try{
   await mkdir(path.join(temporary,'uploads'));
   await writeFile(path.join(temporary,'uploads','sample.png'),png);
-  server=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,PORT:'0',LIBRARY_DATA_DIR:temporary},stdio:['ignore','pipe','pipe']});
+  server=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...cleanEnvironment,PORT:'0',LIBRARY_DATA_DIR:temporary},stdio:['ignore','pipe','pipe']});
   const base=await new Promise((resolve,reject)=>{
     let output='',errors='';
     const timeout=setTimeout(()=>reject(new Error('Temporary server startup timed out.')),10000);

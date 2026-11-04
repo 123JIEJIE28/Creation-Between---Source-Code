@@ -1,0 +1,31 @@
+# Paid service and disk: review Render's cost estimate before creating resources.
+# Blueprint fields: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: creative-library
+    runtime: node
+    plan: starter
+    numInstances: 1
+    buildCommand: node --check server.mjs
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    disk:
+      name: creative-library-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: LIBRARY_DATA_DIR
+        value: /var/data/creative-library
+      - key: OWNER_USERNAME
+        value: 123JIEJIE28
+      - key: OWNER_PASSWORD_HASH
+        sync: false
+      - key: SKIP_INSTALL_DEPS
+        value: "true"
+    # Render supplies PORT and RENDER_EXTERNAL_URL automatically.
+    # Set PUBLIC_ORIGIN manually only when using a custom HTTPS domain.

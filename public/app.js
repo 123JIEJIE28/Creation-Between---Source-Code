@@ -10,7 +10,8 @@ let records=[],view='home',query='',filter='全部',sort='updated',onlyFav=false
 let transitioning=false,pendingNavigation=null,needsDataRender=false;
 let editorSession=null,editorSequence=0,historyIndex=Number.isInteger(history.state?.studioIndex)?history.state.studioIndex:0,restoringHistory=null;
 let discardRequest=null,historyNavigationSequence=0,committedHistoryUrl=location.pathname;
-const api=async(url,options={})=>{const r=await fetch(url,{...options,headers:{'Content-Type':'application/json',...options.headers}});const j=await r.json();if(!r.ok)throw new Error(j.error||'操作失败');return j;};
+const api=(url,options={})=>window.StudioAuth.request(url,options);
+let hasLoadedRecords=false;
 let toastTimer;
 function notify(s){clearTimeout(toastTimer);$('#toast').textContent=s;$('#toast').classList.add('show');toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3000);}
 function count(type){return records.filter(r=>r.type===type).length;}
@@ -55,6 +56,7 @@ async function switchView(v,{historyMode='push',editorChecked=false,expectedSess
   if(v!=='home'&&v!=='library'&&v!=='favorite'&&!categories[v])return;
   if(!editorChecked&&!await canLeaveEditor())return false;
   if(editorSession!==expectedSession)return false;
+  if(v!=='home'){try{if(!await window.StudioAuth.ensure())return false;if(!hasLoadedRecords&&!await load()){notify(loadError);return false;}}catch(error){notify(error.message);return false;}}
   if(transitioning){pendingNavigation={v,historyMode,editorChecked:true,expectedSession};return;}
   if(v===view&&!query){if(!await closeOverlays(expectedSession))return false;const menu=$('#studio-menu');if(menu)menu.hidden=true;document.querySelector('[data-action="menu"]')?.setAttribute('aria-expanded','false');closeSearch();window.scrollTo({top:0,behavior:'instant'});return true;}
   transitioning=true;const previous=view;const app=$('#app');app.inert=true;
@@ -74,7 +76,7 @@ async function switchView(v,{historyMode='push',editorChecked=false,expectedSess
   }
 }
 function gatewayShell(){return `<header class="site-header gateway-header">${brand()}<nav aria-label="主导航"><span class="nav-current">首页</span><button class="nav-item" data-nav="library">探索 ${arrow}</button></nav></header><main id="main" class="gateway" aria-labelledby="screen-title"><div class="gateway-center"><h1 id="screen-title" class="gateway-title" tabindex="-1" aria-label="WORKSPACE">${'WORKSPACE'.split('').map(c=>`<span aria-hidden="true"><span class="letter-float">${c}</span></span>`).join('')}</h1><button id="explore" class="explore-button magnetic" data-nav="library" aria-label="探索创作库"><span>EXPLORE</span><span class="explore-arrow">${arrow}</span></button></div></main>`;}
-function libraryShell(){return `<div class="scroll-progress" aria-hidden="true"></div><header class="site-header">${brand()}<nav class="desktop-nav" aria-label="主导航">${nav('library','创作库')}${nav('characters','人物')}${nav('prompts','提示词')}${nav('works','作品')}</nav><div class="header-actions"><button class="icon-button" data-action="search" aria-label="搜索资料" aria-expanded="false" aria-controls="search-panel">${searchIcon}</button><button class="icon-button menu-toggle" data-action="menu" aria-label="全部模块" aria-expanded="false" aria-controls="studio-menu"><span class="menu-lines" aria-hidden="true"></span></button><button class="header-create" data-new="inbox">新建 <span>＋</span></button></div></header><div id="studio-menu" class="studio-menu" hidden><div class="menu-grid">${Object.entries(categories).map(([id,c],i)=>`<button data-nav="${id}"><strong>${c[0]}</strong>${arrow}</button>`).join('')}<button data-nav="favorite"><strong>我的收藏</strong>${arrow}</button></div></div><div class="search-panel" id="search-panel" hidden><label class="global-search">${searchIcon}<input id="search" aria-label="搜索创作资料" placeholder="搜索" value="${esc(query)}" autocomplete="off"><kbd>⌘ K</kbd></label><button class="icon-button" data-action="search-close" aria-label="关闭搜索">×</button></div><main id="main" class="library-main"></main><footer class="site-footer"><button data-nav="home">返回首页 ${arrow}</button><div><button data-action="import">导入</button><button data-action="export">导出</button></div></footer>`;}
+function libraryShell(){return `<div class="scroll-progress" aria-hidden="true"></div><header class="site-header">${brand()}<nav class="desktop-nav" aria-label="主导航">${nav('library','创作库')}${nav('characters','人物')}${nav('prompts','提示词')}${nav('works','作品')}</nav><div class="header-actions"><button class="icon-button" data-action="search" aria-label="搜索资料" aria-expanded="false" aria-controls="search-panel">${searchIcon}</button><button class="icon-button menu-toggle" data-action="menu" aria-label="全部模块" aria-expanded="false" aria-controls="studio-menu"><span class="menu-lines" aria-hidden="true"></span></button><button class="header-create" data-new="inbox">新建 <span>＋</span></button>${window.StudioAuth.state?.authRequired?'<button class="auth-logout" data-action="logout">退出登录</button>':''}</div></header><div id="studio-menu" class="studio-menu" hidden><div class="menu-grid">${Object.entries(categories).map(([id,c],i)=>`<button data-nav="${id}"><strong>${c[0]}</strong>${arrow}</button>`).join('')}<button data-nav="favorite"><strong>我的收藏</strong>${arrow}</button></div></div><div class="search-panel" id="search-panel" hidden><label class="global-search">${searchIcon}<input id="search" aria-label="搜索创作资料" placeholder="搜索" value="${esc(query)}" autocomplete="off"><kbd>⌘ K</kbd></label><button class="icon-button" data-action="search-close" aria-label="关闭搜索">×</button></div><main id="main" class="library-main"></main><footer class="site-footer"><button data-nav="home">返回首页 ${arrow}</button><div><button data-action="import">导入</button><button data-action="export">导出</button></div></footer>`;}
 function render({resetScroll=false}={}){
   stageAnimations.forEach(animation=>animation.cancel());stageAnimations=[];
   const scroll=resetScroll?0:window.scrollY;window.StudioMotion?.destroy();document.body.classList.toggle('is-gateway',view==='home');
@@ -173,6 +175,7 @@ async function dispatchAction(e){const b=e.target.closest('button');if(!b)return
     if(b.dataset.action==='menu'){const menu=$('#studio-menu');const open=menu.hidden;menu.hidden=!open;document.querySelector('[data-action="menu"]').setAttribute('aria-expanded',String(open));closeSearch(false);return;}
     if(b.dataset.action==='search'){const panel=$('#search-panel');if(panel.hidden)openSearch();else closeSearch();return;}
     if(b.dataset.action==='search-close'){closeSearch();return;}
+    if(b.dataset.action==='logout'){if(!await canLeaveEditor())return;await window.StudioAuth.logout();await closeOverlays();for(const id of ['editor','detail','lightbox'])$('#'+id).replaceChildren();records=[];hasLoadedRecords=false;loadError='';isLoading=false;await switchView('home');notify('已退出登录');return;}
     if(b.dataset.action==='retry'){await load();return;}
     if(b.dataset.action==='import'){$('#import-file').click();return;}
     if(b.dataset.action==='export'){const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),note:'图片需另行备份 data/uploads。',records},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='造物间-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('已导出资料；图片需单独备份');}
@@ -201,7 +204,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&view!=='home'&&!document.querySelector('dialog[open]')){const menu=$('#studio-menu');if(menu)menu.hidden=true;document.querySelector('[data-action="menu"]')?.setAttribute('aria-expanded','false');closeSearch();}
 });
 $('#import-file').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;if(f.size>10*1024*1024)throw new Error('备份文件不能超过 10 MB');const data=JSON.parse(await f.text());await api('/api/import',{method:'POST',body:JSON.stringify(data)});await load();notify('已导入');}catch(error){notify(error.message);}finally{e.target.value='';}};
-for(const d of document.querySelectorAll('dialog')){
+for(const d of document.querySelectorAll('dialog:not(#login)')){
   d.addEventListener('click',async e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)await closeOverlay(d.id);}});
   if(d.id==='editor')d.addEventListener('cancel',async e=>{e.preventDefault();await closeEditor();});
   if(d.id==='discard-confirm')d.addEventListener('cancel',e=>{e.preventDefault();finishDiscard(false);});
@@ -224,10 +227,13 @@ window.addEventListener('popstate',async e=>{
     else history.replaceState({studioView:view,studioIndex:historyIndex},'',committedHistoryUrl);
     return;
   }
+  const previousIndex=historyIndex,previousUrl=committedHistoryUrl;
   historyIndex=targetIndex??historyIndex;committedHistoryUrl=targetUrl;
-  await switchView(e.state?.studioView||'home',{historyMode:'none',editorChecked:true,expectedSession:session});
+  const moved=await switchView(e.state?.studioView||'home',{historyMode:'none',editorChecked:true,expectedSession:session});
+  if(moved===false){historyIndex=previousIndex;committedHistoryUrl=previousUrl;const delta=targetIndex===null?0:previousIndex-targetIndex;if(delta){restoringHistory=previousIndex;history.go(delta);}else history.replaceState({studioView:view,studioIndex:historyIndex},'',previousUrl);}
 });
 window.addEventListener('beforeunload',e=>{if($('#editor').open&&(editorSession?.saving||editorHasChanges())){e.preventDefault();e.returnValue='';}});
 history.replaceState({studioView:'home',studioIndex:historyIndex},'',location.pathname);
-async function load(){isLoading=true;try{records=await api('/api/records');loadError='';}catch(e){loadError=e.message;}finally{isLoading=false;if(transitioning)needsDataRender=true;else if(view!=='home')render();}}
-render();load();
+async function load(){isLoading=true;try{records=await api('/api/records');hasLoadedRecords=true;loadError='';return true;}catch(e){hasLoadedRecords=false;loadError=e.message;return false;}finally{isLoading=false;if(transitioning)needsDataRender=true;else if(view!=='home')render();}}
+document.addEventListener('click',async event=>{const link=event.target.closest('a.image-download');if(!link)return;event.preventDefault();if(link.getAttribute('aria-busy')==='true')return;link.setAttribute('aria-busy','true');try{await window.StudioAuth.download(link.href,link.download);}catch(error){notify(error.message);}finally{link.removeAttribute('aria-busy');}});
+render();window.StudioAuth.ready().then(session=>{if(!session.authRequired||session.authenticated)return load();isLoading=false;}).catch(error=>{isLoading=false;loadError=error.message;});

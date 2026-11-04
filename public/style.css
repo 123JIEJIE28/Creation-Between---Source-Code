@@ -319,6 +319,18 @@ h3 { font-size: 14px; }
 .detail-image-empty>span { color: #888; font-size: 12px; }
 .detail-image-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
 .detail-image-actions .image-download { margin: 0; }
+.image-download[aria-busy="true"] { opacity: .55; cursor: wait; }
+.auth-logout { padding: 9px 0; font-size: 12px; color: #969696; white-space: nowrap; }
+.auth-logout:hover { color: #fff; }
+#login { width: min(460px, calc(100% - 36px)); padding: 38px; background: #111; border-color: #383838; }
+.login-heading { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 36px; }
+.login-heading h2 { font-size: clamp(42px, 7vw, 58px); font-weight: 600; line-height: 1; letter-spacing: -.06em; }
+.login-heading p { margin-top: 14px; color: #999; font-size: 13px; }
+#login-form>label { font-size: 12px; color: #aaa; margin-bottom: 22px; }
+#login-form input { font-size: 16px; padding: 13px 14px; }
+#login-form .form-error { font-size: 12px; min-height: 20px; margin-top: -2px; }
+.login-submit { width: 100%; margin-top: 18px; padding: 14px; }
+@media (max-width: 600px) { #login { padding: 28px 24px; } .auth-logout { font-size: 11px; } }
 .lightbox-actions { position: absolute; right: 5%; top: 16px; display: flex; align-items: center; gap: 12px; }
 .lightbox-actions .image-download { margin: 0; background: #111; }
 .lightbox-actions .image-download:hover { background: #eee; }
