@@ -27,7 +27,7 @@ npm start
 1. 确认 GitHub 仓库根目录已经包含 `render.yaml`、`server.mjs`、`package.json`、`public/`、`lib/` 和 `scripts/hash-password.mjs`。
 2. 登录 [Render](https://dashboard.render.com/)，连接 GitHub 账号，允许访问 [Creation-Between---Source-Code](https://github.com/123JIEJIE28/Creation-Between---Source-Code)。
 3. 选择新建 **Blueprint**，连接该仓库的 `main` 分支，配置文件使用根目录的 `render.yaml`。
-4. 检查服务名、区域和费用。此配置使用 **Starter 服务 + 1 GB 持久磁盘**，两项都是付费资源；请在创建前确认控制台显示的当期价格。需要不同区域时，先在 YAML 中设置 `region`，再创建服务。
+4. 检查服务名、区域和费用。此配置使用 **新加坡区域、Starter 服务 + 1 GB 持久磁盘**，两项都是付费资源；请在创建前确认控制台显示的当期价格。需要不同区域时，先修改 YAML 中的 `region`，再创建服务；创建后不能直接更换区域。
 5. 创建流程提示 `OWNER_PASSWORD_HASH` 时，粘贴本机 `npm run password:hash` 生成的完整哈希。登录用户名默认是 `123JIEJIE28`；网站密码由你单独设置，与 GitHub 密码无关。
 6. 确认创建后，等待服务变为 **Live**，打开 Render 分配的 `https://…onrender.com` 地址。
 7. 登录后创建一条资料并上传一张图片，确认刷新后仍存在、原图可以下载。随后手动重启一次服务，再登录核对资料与图片仍在。

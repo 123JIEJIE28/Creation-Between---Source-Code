@@ -4,6 +4,7 @@ services:
   - type: web
     name: creative-library
     runtime: node
+    region: singapore
     plan: starter
     numInstances: 1
     buildCommand: node --check server.mjs
